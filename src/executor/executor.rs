@@ -33,7 +33,7 @@ impl Executor {
     {
         let new_task_id = self.task_id_allocator.fetch_add(1, Ordering::Relaxed);
         let new_task = Arc::new(Task {
-            task_fut: Mutex::new(Box::pin(fut)),
+            task_fut: RefCell::new(Box::pin(fut)),
             task_id: new_task_id,
             task_name: format!("Task_{}", new_task_id),
             task_state: TaskState::Running,
@@ -63,11 +63,9 @@ impl Executor {
                 // run the task
                 let waker = futures::task::noop_waker(); // minimal waker
                 let mut cx = Context::from_waker(&waker);
-
-                let mut fut_guard = task.task_fut.lock().unwrap();
-                let fut: Pin<&mut dyn Future<Output = ()>> = fut_guard.as_mut();
-
-                match fut.poll(&mut cx) {
+                
+                let mut fut = task.task_fut.borrow_mut();
+                match fut.as_mut().poll(&mut cx) {
                     Poll::Ready(()) => {
                         println!("Task {} completed", task_id);
                         finished.push(*task_id);
