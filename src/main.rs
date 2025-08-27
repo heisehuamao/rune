@@ -1,5 +1,5 @@
-mod executor;
-use crate::executor::executor::Executor;
+mod sched;
+use crate::sched::runtime::Executor;
 
 fn main() {
     let mut exec = Executor::new();
