@@ -18,7 +18,7 @@ thread_local! {
 
 pub struct Executor {
     task_id_allocator: AtomicU64,
-    task_id_map: HashMap<u64, Arc<Task>>,
+    task_id_map: HashMap<u64, Rc<Task>>,
     task_run_queue: Rc<RefCell<VecDeque<u64>>>,
     task_sleep_ring: Rc<RefCell<Vec<VecDeque<u64>>>>
 }
@@ -53,18 +53,18 @@ impl Executor {
     pub fn run(&mut self) {
         loop {
             let mut finished = vec![];
-            let mut rq = self.task_run_queue.borrow_mut(); 
+            let mut rq = self.task_run_queue.borrow_mut();
             loop {
                 let Some(task_id) = rq.pop_front() else {
                     // no task anymore
                     break;
                 };
-                
+
                 let Some(task) = self.task_id_map.get(&task_id) else {
                     // invalid task
                     continue;
                 };
-                
+
                 TASK_ID_RUNNING.set(task_id);
                 TASK_NAME_RUNNING.with(|name| {
                     name.borrow_mut().clear();
