@@ -4,13 +4,18 @@ use crate::sched::runtime::Executor;
 fn main() {
     let mut exec = Executor::new();
 
-    exec.spawn({
+    if let Err(_) = Executor::register(&exec) {
+        eprintln!("failed to register executor");
+        return;
+    }
+    
+    _ = exec.spawn({
         async move {
             println!("Task name is: {}, id: {}", Executor::task_name(), Executor::task_id());
         }
     });
 
-    exec.spawn({
+    _ = exec.spawn({
         async move {
             println!("Task name is: {}, id: {}", Executor::task_name(), Executor::task_id());
         }
