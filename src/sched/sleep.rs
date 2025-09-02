@@ -1,6 +1,6 @@
 use std::pin::Pin;
 use std::task::{Context, Poll};
-use crate::sched::runtime::{thread_sleep_mod, thread_wall_clock};
+use crate::sched::runtime::{thread_runtime_wall_clock, thread_runtime_sleep_mod};
 use crate::sched::task_handle::{my_waker_extract_task_handle};
 
 pub struct TaskSleep {
@@ -19,14 +19,16 @@ impl Future for TaskSleep {
     type Output = ();
 
     fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-        let latest_clock = thread_wall_clock();
+        let waker = cx.waker().clone();
+        let handle = my_waker_extract_task_handle(&waker);
+        let latest_clock = thread_runtime_wall_clock();
+        println!("task id:{}, Sleep Poll, until:{}, latest:{}", handle.task_id, self.until_clock, latest_clock);
         if self.until_clock <= latest_clock {
             Poll::Ready(())
         } else {
-            if let Some(sm) = thread_sleep_mod() {
-                let waker = cx.waker().clone();
-                let handle = my_waker_extract_task_handle(&waker);
-                match sm.add_sleep_task(self.until_clock - latest_clock, handle) {
+            if let Some(sm) = thread_runtime_sleep_mod() {
+                println!("Sleep Poll for {}", handle.task_id);
+                match sm.push_back_sleep_task(self.until_clock - latest_clock, handle) {
                     Ok(_) => Poll::Pending,
                     _ => {
                         eprintln!("poll of tasksleep enqueue error");
@@ -35,6 +37,7 @@ impl Future for TaskSleep {
                 }
                 
             } else {
+                eprintln!("Sleep mod is none");
                 Poll::Ready(())
             }
         }

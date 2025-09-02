@@ -1,4 +1,6 @@
 mod sched;
+
+use std::time::Duration;
 use crate::sched::runtime::Executor;
 
 fn main() {
@@ -11,13 +13,21 @@ fn main() {
     
     _ = exec.spawn({
         async move {
-            println!("Task name is: {}, id: {}", Executor::task_name(), Executor::task_id());
+            for i in 1..5 {
+                println!("A Round:{i} Task name is: {}, id: {}", Executor::task_name(), Executor::task_id());
+                Executor::sleep(Duration::from_micros(1)).await;
+                println!("A Round:{i} After sleep: {}, id:{}", Executor::task_name(), Executor::task_id());
+            }
         }
     });
 
     _ = exec.spawn({
         async move {
-            println!("Task name is: {}, id: {}", Executor::task_name(), Executor::task_id());
+            for i in 1..3 {
+                println!("B Round:{i} Task name is: {}, id: {}", Executor::task_name(), Executor::task_id());
+                Executor::sleep(Duration::from_micros(3)).await;
+                println!("B Round:{i} After sleep: {}, id:{}", Executor::task_name(), Executor::task_id());
+            }
         }
     });
 
